@@ -30,7 +30,7 @@ function NavHeader(){
 	);
 }
 
-function UserAlert(){
+function LoginAlert(){
 	const [user] = useAuthState(auth);
 	const googleSignIn = () => {
 		const provider = new GoogleAuthProvider();
@@ -42,8 +42,8 @@ function UserAlert(){
 	return (
 		<div className="h-screen flex items-center justify-center">
 			<div>
-		<h1 className="font-bold text-white py-2">🗣️ Talk with anyone using Nexil<br /> Get Started!</h1>
-                        <button onClick={googleSignIn} className="sign-in border-0 bg-white text-black font-bold text-md hover:border-2 hover:border-blue-500 px-2 py-2 rounded-full flex items-center justify-center"><img src={googleIcon} className="w-1/5 pr-2"/> Sign In With Google</button>
+		<h1 className="font-bold text-white text-center py-2">🗣️ Talk with anyone using Nexil<br /> Get Started!</h1>
+                        <button onClick={googleSignIn} className="border-0 bg-white text-black font-bold text-md hover:border-2 hover:border-blue-500 px-2 py-2 rounded-full flex items-center justify-center"><img src={googleIcon} className="w-1/5 pr-2"/>Log In With Google</button>
 			</div>
 		</div>
 	);
@@ -54,7 +54,6 @@ const SendMessage = () => {
 	const sendMessage = async (event) => {
 		event.preventDefault();
 		if (message.trim() === "") {
-			alert("Enter valid message");
 			return;
 		}
 		const { uid, displayName, photoURL } = auth.currentUser;
@@ -68,7 +67,7 @@ const SendMessage = () => {
 		setMessage("");
 	};
   return (
-    <form onSubmit={(event) => sendMessage(event)} className="align-bottom send-message bg-none flex items-center justify-between">
+    <form onSubmit={(event) => sendMessage(event)} className="sticky bottom-0 bg-none flex items-center justify-between">
       <label htmlFor="messageInput" hidden>
         Enter Message
       </label>
@@ -76,7 +75,7 @@ const SendMessage = () => {
         id="messageInput"
         name="messageInput"
         type="text"
-        className="form-input__input bg-white border-0 px-2 py-2 w-11/12"
+        className="bg-white border-0 px-2 py-2 w-11/12"
         placeholder="message"
 	value={message}
         onChange={(e) => setMessage(e.target.value)}
@@ -86,28 +85,43 @@ const SendMessage = () => {
   );
 };
 
-const Message = ({ message }) => {
+const ReceivedMessage = ({ message }) => {
+	return (
+      <div className="pb-1 flex justify-start">
+    <div className="bg-white border-0 rounded-md w-3/4 h-1/2">
+      <div className="text-left px-1 py-1">
+      <p className="italic font-bold text-sm">{message.name}</p>
+      <p>{message.text}</p>
+      </div>
+      </div>
+      </div>
+  );
+}
+
+const SentMessage = ({ message }) => {
+	return (
+      <div className="pb-1 flex justify-end">
+    <div className="bg-white border-0 rounded-md w-3/4 h-1/2">
+      <div className="text-right px-1 py-1">
+      <p className="italic font-bold text-sm">{message.name}</p>
+      <p>{message.text}</p>
+      </div>
+      </div>
+      </div>
+  );
+}
+
+const MessageInfoContainer = ({ message }) => {
   const [user] = useAuthState(auth);
 
   return (
-    <div
-      className={`chat-bubble ${message.uid === user.uid ? "right" : ""}`}>
-      <div className="flex items-center justify-between">
-      <img
-        className="chat-bubble__left w-1/5 border-0 rounded-full"
-        src={message.avatar}
-        alt="user avatar"
-      />
-      <div className="chat-bubble__right text-right">
-      <p className="user-name italic font-bold text-sm">{message.name}</p>
-      <p className="user-message">{message.text}</p>
+    <div>
+	  {message.uid === user.uid ? <SentMessage message={message}/> : <ReceivedMessage message={message}/>}
       </div>
-      </div>
-    </div>
   );
 };
 
-const Body = () => {
+const MessageBody = () => {
   const [messages, setMessages] = useState([]);
   const scroll = useRef();
 
@@ -132,20 +146,18 @@ const Body = () => {
   }, []);
 
   return (
-    <div className="bg-white text-black">
-      <div className="messages-wrapper rounded-full px-2 py-2">
-        {messages?.map((message) => (
-          <Message key={message.id} message={message} />
+	  <div>
+	{messages?.map((message) => (
+          <MessageInfoContainer key={message.id} message={message} />
         ))}
-      </div>
-    </div>
+	  </div>
   );
 };
 
-const Render = () => {
+const Body = () => {
 	return(
-		<div className="h-screen">
-			<Body />
+		<div>
+			<MessageBody />
 			<SendMessage />
 		</div>
 	);
@@ -156,7 +168,7 @@ function App() {
   return (
     <div className="App bg-gray-900">
 	  <NavHeader />
-	  {!user ? <UserAlert /> : <Render />}
+	  {!user ? <LoginAlert /> : <Body />}
     </div>
   );
 }
