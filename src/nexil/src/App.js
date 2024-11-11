@@ -7,6 +7,9 @@ import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit,
 import './App.css';
 import googleIcon from "./images/google.svg"
 import logoutIcon from "./images/logout.svg"
+import sendIcon from "./images/send.svg"
+import replyIcon from "./images/reply.svg"
+import nexilIcon from "./images/nexil-icon-transparent.png"
 
 function NavHeader(){
 	const [user] = useAuthState(auth);
@@ -15,12 +18,15 @@ function NavHeader(){
 	};
 
 	return (
-		<div className="text-white bg-blue-500 flex items-center justify-between">
+		<div className="text-white bg-blue-500 flex items-center justify-center">
+		<div className="flex items-center justify-start">
+		<img src={nexilIcon} alt="icon" className="w-1/12 h-1/12" />
 			<h1 className="px-2 py-2 font-bold text-2xl">Nexil</h1>
-			<nav>
+		</div>
+			<nav className="flex-shrink-0">
 		{user ? (
-			<button onClick={signOut} type="button" className="sign-out border-0 bg-none px-2 py-2">
-				<img src={logoutIcon} />
+			<button onClick={signOut} type="button" className="border-0 bg-none px-2 py-2">
+				<img src={logoutIcon} alt="logout" />
 			</button>
 		) : (
 			<span></span>
@@ -41,9 +47,12 @@ function LoginAlert(){
 	};
 	return (
 		<div className="h-screen flex items-center justify-center">
-			<div>
+			<div className="flex flex-col items-center">
+		<div className="flex items-center justify-center mb-4">
+		<img src={nexilIcon} className="w-1/2" />
+		</div>
 		<h1 className="font-bold text-white text-center py-2">🗣️ Talk with anyone using Nexil<br /> Get Started!</h1>
-                        <button onClick={googleSignIn} className="border-0 bg-white text-black font-bold text-md hover:border-2 hover:border-blue-500 px-2 py-2 rounded-full flex items-center justify-center"><img src={googleIcon} className="w-1/5 pr-2"/>Log In With Google</button>
+                        <button onClick={googleSignIn} className="border-0 bg-white text-black font-bold text-md hover:border-2 hover:border-blue-500 px-4 py-2 rounded-full flex items-center justify-center"><img src={googleIcon} className="w-5 h-5 mr-2"/>Log In With Google</button>
 			</div>
 		</div>
 	);
@@ -75,12 +84,12 @@ const SendMessage = () => {
         id="messageInput"
         name="messageInput"
         type="text"
-        className="bg-white border-0 px-2 py-2 w-11/12"
+        className="bg-white border-0 px-2 py-2 w-screen h-full"
         placeholder="message"
 	value={message}
         onChange={(e) => setMessage(e.target.value)}
       />
-      <button type="submit" className="bg-blue-500 px-2 py-2 hover:bg-blue-900">Send</button>
+      <button type="submit" className="bg-blue-500 px-2 py-2 hover:bg-blue-900"><img src={sendIcon} alt="send" /></button>
     </form>
   );
 };
@@ -88,10 +97,15 @@ const SendMessage = () => {
 const ReceivedMessage = ({ message }) => {
 	return (
       <div className="pb-1 flex justify-start">
-    <div className="bg-white border-0 rounded-md w-3/4 h-1/2">
+		    <img 
+		className="border-0 rounded-full mr-2 w-1/2 w-8 h-8" 
+		src={message.avatar} 
+		alt="userAvatar" 
+		/>
+    <div className="bg-white border-0 rounded-b-md rounded-r-md max-w-[65%] inline-block">
       <div className="text-left px-1 py-1">
       <p className="italic font-bold text-sm">{message.name}</p>
-      <p>{message.text}</p>
+      <p className="break-words">{message.text}</p>
       </div>
       </div>
       </div>
@@ -101,12 +115,17 @@ const ReceivedMessage = ({ message }) => {
 const SentMessage = ({ message }) => {
 	return (
       <div className="pb-1 flex justify-end">
-    <div className="bg-white border-0 rounded-md w-3/4 h-1/2">
-      <div className="text-right px-1 py-1">
+    <div className="bg-white border-0 rounded-b-md rounded-l-md max-w-[65%] inline-block">
+	<div className="text-right px-1 py-1">
       <p className="italic font-bold text-sm">{message.name}</p>
-      <p>{message.text}</p>
+      <p className="break-words">{message.text}</p>
+		</div>
       </div>
-      </div>
+		    <img 
+		className="border-0 rounded-full ml-2 w-1/2 w-8 h-8" 
+		src={message.avatar} 
+		alt="userAvatar" 
+		/>
       </div>
   );
 }
