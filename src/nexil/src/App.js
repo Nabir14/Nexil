@@ -18,7 +18,7 @@ function NavHeader(){
 	};
 
 	return (
-		<div className="text-white bg-blue-500 flex items-center justify-center">
+		<div className="sticky top-0 text-white bg-neutral-900 flex items-center justify-center">
 		<div className="flex items-center justify-start">
 		<img src={nexilIcon} alt="icon" className="w-1/12 h-1/12" />
 			<h1 className="px-2 py-2 font-bold text-2xl">Nexil</h1>
@@ -58,11 +58,13 @@ function LoginAlert(){
 	);
 }
 
-const SendMessage = () => {
+const SendMessage = ({scroll}) => {
 	const [message, setMessage] = useState("");
 	const sendMessage = async (event) => {
 		event.preventDefault();
 		if (message.trim() === "") {
+			setMessage("");
+			scroll.current.scrollIntoView({ behavior: "smooth" });
 			return;
 		}
 		const { uid, displayName, photoURL } = auth.currentUser;
@@ -74,6 +76,7 @@ const SendMessage = () => {
 			uid,
 		});
 		setMessage("");
+		scroll.current.scrollIntoView({ behavior: "smooth" });
 	};
   return (
     <form onSubmit={(event) => sendMessage(event)} className="sticky bottom-0 bg-none flex items-center justify-between">
@@ -84,25 +87,25 @@ const SendMessage = () => {
         id="messageInput"
         name="messageInput"
         type="text"
-        className="bg-white border-0 px-2 py-2 w-screen h-full"
+        className="bg-neutral-800 text-white border-0 px-2 py-2 w-screen h-full"
         placeholder="message"
 	value={message}
         onChange={(e) => setMessage(e.target.value)}
       />
-      <button type="submit" className="bg-blue-500 px-2 py-2 hover:bg-blue-900"><img src={sendIcon} alt="send" /></button>
+      <button type="submit" className="transition ease-in-out delay-300 bg-blue-600 px-2 py-2 hover:bg-purple-600"><img src={sendIcon} alt="send" /></button>
     </form>
   );
 };
 
 const ReceivedMessage = ({ message }) => {
 	return (
-      <div className="pb-1 flex justify-start">
+      <div className="py-1 flex justify-start text-white">
 		    <img 
 		className="border-0 rounded-full mr-2 w-1/2 w-8 h-8" 
 		src={message.avatar} 
 		alt="userAvatar" 
 		/>
-    <div className="bg-white border-0 rounded-b-md rounded-r-md max-w-[65%] inline-block">
+    <div className="bg-neutral-800 border-0 rounded-b-md rounded-r-md max-w-[65%] inline-block">
       <div className="text-left px-1 py-1">
       <p className="italic font-bold text-sm">{message.name}</p>
       <p className="break-words">{message.text}</p>
@@ -114,8 +117,8 @@ const ReceivedMessage = ({ message }) => {
 
 const SentMessage = ({ message }) => {
 	return (
-      <div className="pb-1 flex justify-end">
-    <div className="bg-white border-0 rounded-b-md rounded-l-md max-w-[65%] inline-block">
+      <div className="py-1 flex justify-end text-white">
+    <div className="bg-neutral-800 border-0 rounded-b-md rounded-l-md max-w-[65%] inline-block">
 	<div className="text-right px-1 py-1">
       <p className="italic font-bold text-sm">{message.name}</p>
       <p className="break-words">{message.text}</p>
@@ -165,11 +168,15 @@ const MessageBody = () => {
   }, []);
 
   return (
+	  <main>
 	  <div>
 	{messages?.map((message) => (
           <MessageInfoContainer key={message.id} message={message} />
         ))}
 	  </div>
+	  <span ref={scroll}></span>
+          <SendMessage scroll={scroll} />
+	  </main>
   );
 };
 
@@ -177,7 +184,6 @@ const Body = () => {
 	return(
 		<div>
 			<MessageBody />
-			<SendMessage />
 		</div>
 	);
 }
@@ -185,7 +191,7 @@ const Body = () => {
 function App() {
   const [user] = useAuthState(auth);
   return (
-    <div className="App bg-gray-900">
+    <div className="App bg-neutral-950">
 	  <NavHeader />
 	  {!user ? <LoginAlert /> : <Body />}
     </div>
