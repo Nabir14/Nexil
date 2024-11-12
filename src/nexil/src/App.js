@@ -9,7 +9,10 @@ import googleIcon from "./images/google.svg"
 import logoutIcon from "./images/logout.svg"
 import sendIcon from "./images/send.svg"
 import replyIcon from "./images/reply.svg"
+import backIcon from "./images/back.svg"
 import nexilIcon from "./images/nexil-icon-transparent.png"
+
+let room = 0;
 
 function NavHeader(){
 	const [user] = useAuthState(auth);
@@ -18,10 +21,10 @@ function NavHeader(){
 	};
 
 	return (
-		<div className="sticky top-0 text-white bg-neutral-900 flex items-center justify-center">
-		<div className="flex items-center justify-start">
-		<img src={nexilIcon} alt="icon" className="w-1/12 h-1/12" />
-			<h1 className="px-2 py-2 font-bold text-2xl">Nexil</h1>
+		<div className="sticky top-0 text-white bg-neutral-900 flex items-center justify-between">
+		<div className="flex items-center justify-center px-2 py-2">
+		<img src={nexilIcon} alt="icon" className="w-8 h-8" />
+			<h1 className="px-1 py-1 font-bold text-2xl">Nexil</h1>
 		</div>
 			<nav className="flex-shrink-0">
 		{user ? (
@@ -58,7 +61,7 @@ function LoginAlert(){
 	);
 }
 
-const SendMessage = ({scroll}) => {
+const SendMessage = ({scroll, trigger}) => {
 	const [message, setMessage] = useState("");
 	const sendMessage = async (event) => {
 		event.preventDefault();
@@ -80,6 +83,7 @@ const SendMessage = ({scroll}) => {
 	};
   return (
     <form onSubmit={(event) => sendMessage(event)} className="sticky bottom-0 bg-none flex items-center justify-between">
+      <button className="transition ease-in-out delay-300 bg-neutral-800 px-2 py-2 hover:bg-neutral-900" onClick={() => trigger(0)}><img src={backIcon} alt="back" /></button>
       <label htmlFor="messageInput" hidden>
         Enter Message
       </label>
@@ -143,7 +147,7 @@ const MessageInfoContainer = ({ message }) => {
   );
 };
 
-const MessageBody = () => {
+const MessageBody =  ({ e }) => {
   const [messages, setMessages] = useState([]);
   const scroll = useRef();
 
@@ -175,25 +179,73 @@ const MessageBody = () => {
         ))}
 	  </div>
 	  <span ref={scroll}></span>
-          <SendMessage scroll={scroll} />
+          <SendMessage scroll={scroll} trigger={e}/>
 	  </main>
   );
 };
 
-const Body = () => {
+const PCRCard = ({trigger}) => {
+	return (
+		<div className="max-w-sm p-6 bg-white border rounded-lg shadow bg-zinc-900 border-neutral-700 transition ease-in-out hover:shadow-lg hover:shadow-fuchsia-500/50">
+    <h5 className="mb-2 text-2xl font-bold tracking-tight text-white">
+      Public Chat Room
+	</h5>
+  <p className="mb-3 font-normal text-gray-400">
+    A chat room to talk with multiple people from across the world.
+  </p>
+  <button className="transition ease-in-out delay-500 inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white rounded-lg bg-gradient-to-r from-blue-800 to-fuchsia-500 hover:border-2 hover:border-blue-500" onClick={() => trigger(1)} >
+    Enter
+    <svg
+      className="rtl:rotate-180 w-3.5 h-3.5 ms-2"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 14 10"
+    >
+      <path
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M1 5h12m0 0L9 1m4 4L9 9"
+      />
+    </svg>
+  </button>
+</div>
+);
+}
+
+const Lobby = ({ e }) => {
+	return (
+		<div className="h-screen flex items-center justify-center">
+			<PCRCard trigger={e}/>
+		</div>
+
+	);
+}
+
+const PublicChatRoom = ({ e }) => {
 	return(
 		<div>
-			<MessageBody />
+			<MessageBody e={e} />
 		</div>
 	);
 }
 
 function App() {
   const [user] = useAuthState(auth);
+  const [room, setRoom] = useState(0);
+
   return (
     <div className="App bg-neutral-950">
 	  <NavHeader />
-	  {!user ? <LoginAlert /> : <Body />}
+	  {!user ? (
+        <LoginAlert />
+      ) : room === 0 ? (
+        <Lobby e={setRoom} />
+      ) : (
+        <PublicChatRoom e={setRoom} />
+      )}
     </div>
   );
 }
