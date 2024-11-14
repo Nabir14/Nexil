@@ -193,7 +193,7 @@ const PCRCard = ({trigger}) => {
   <p className="mb-3 font-normal text-gray-400">
     A chat room to talk with multiple people from across the world.
   </p>
-  <button className="transition ease-in-out delay-500 inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white rounded-lg bg-gradient-to-r from-blue-800 to-fuchsia-500 hover:border-2 hover:border-blue-500" onClick={() => trigger(1)} >
+  <button className="transition ease-in-out delay-500 inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white rounded-lg bg-gradient-to-r from-blue-800 to-fuchsia-500 hover:border-2 hover:border-blue-500" onClick={trigger} >
     Enter
     <svg
       className="rtl:rotate-180 w-3.5 h-3.5 ms-2"
@@ -215,10 +215,10 @@ const PCRCard = ({trigger}) => {
 );
 }
 
-const Lobby = ({ e }) => {
+const Lobby = ({ enterRoom }) => {
 	return (
 		<div className="h-screen flex items-center justify-center">
-			<PCRCard trigger={e}/>
+			<PCRCard trigger={() => enterRoom(1)}/>
 		</div>
 
 	);
@@ -232,19 +232,42 @@ const PublicChatRoom = ({ e }) => {
 	);
 }
 
+const LoadingPage = () => {
+	return (
+		<div className="h-screen flex items-center justify-center">
+			<h1 className="text-white">Loading...</h1>
+		</div>
+	);
+}
+
 function App() {
   const [user] = useAuthState(auth);
   const [room, setRoom] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [targetRoom, setTargetRoom] = useState(null);
+
+  const enterRoom = (roomId) => {
+    setTargetRoom(roomId);
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setRoom(roomId);
+    }, 5000);
+  };
 
   return (
     <div className="App bg-neutral-950">
 	  <NavHeader />
 	  {!user ? (
         <LoginAlert />
+      ) : loading ? (
+        <LoadingPage />
       ) : room === 0 ? (
-        <Lobby e={setRoom} />
-      ) : (
+        <Lobby enterRoom={enterRoom} />
+      ) : room === 1 ? (
         <PublicChatRoom e={setRoom} />
+      ) : (
+	<Lobby enterRoom={enterRoom} />
       )}
     </div>
   );
