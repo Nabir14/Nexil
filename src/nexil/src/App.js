@@ -12,8 +12,6 @@ import replyIcon from "./images/reply.svg"
 import backIcon from "./images/back.svg"
 import nexilIcon from "./images/nexil-icon-transparent.png"
 
-let room = 0;
-
 function NavHeader(){
 	const [user] = useAuthState(auth);
 	const signOut = () => {
@@ -147,7 +145,7 @@ const MessageInfoContainer = ({ message }) => {
   );
 };
 
-const MessageBody =  ({ e }) => {
+const MessageBody =  ({ setRoom }) => {
   const [messages, setMessages] = useState([]);
   const scroll = useRef();
 
@@ -179,12 +177,12 @@ const MessageBody =  ({ e }) => {
         ))}
 	  </div>
 	  <span ref={scroll}></span>
-          <SendMessage scroll={scroll} trigger={e}/>
+          <SendMessage scroll={scroll} trigger={ setRoom }/>
 	  </main>
   );
 };
 
-const PCRCard = ({trigger}) => {
+const PCRCard = ({ trigger }) => {
 	return (
 		<div className="max-w-sm p-6 bg-white border rounded-lg shadow bg-zinc-900 border-neutral-700 transition ease-in-out hover:shadow-lg hover:shadow-fuchsia-500/50">
     <h5 className="mb-2 text-2xl font-bold tracking-tight text-white">
@@ -224,10 +222,10 @@ const Lobby = ({ enterRoom }) => {
 	);
 }
 
-const PublicChatRoom = ({ e }) => {
+const PublicChatRoom = ({ setRoom }) => {
 	return(
 		<div>
-			<MessageBody e={e} />
+			<MessageBody setRoom={setRoom} />
 		</div>
 	);
 }
@@ -235,7 +233,7 @@ const PublicChatRoom = ({ e }) => {
 const LoadingPage = () => {
 	return (
 		<div className="h-screen flex items-center justify-center">
-			<h1 className="text-white">Loading...</h1>
+			<h1 className="italic font-bold text-3xl text-white">🌐 Loading...</h1>
 		</div>
 	);
 }
@@ -265,7 +263,7 @@ function App() {
       ) : room === 0 ? (
         <Lobby enterRoom={enterRoom} />
       ) : room === 1 ? (
-        <PublicChatRoom e={setRoom} />
+        <PublicChatRoom setRoom={setRoom} />
       ) : (
 	<Lobby enterRoom={enterRoom} />
       )}
