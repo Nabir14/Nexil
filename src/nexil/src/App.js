@@ -3,6 +3,7 @@ import { auth, db } from "./firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit, } from "firebase/firestore";
+import { Filter } from 'bad-words';
 
 import './App.css';
 import googleIcon from "./images/google.svg"
@@ -61,6 +62,8 @@ function LoginAlert(){
 
 const SendMessage = ({scroll, trigger}) => {
 	const [message, setMessage] = useState("");
+	const textFilter = new Filter();
+
 	const sendMessage = async (event) => {
 		event.preventDefault();
 		if (message.trim() === "") {
@@ -70,7 +73,7 @@ const SendMessage = ({scroll, trigger}) => {
 		}
 		const { uid, displayName, photoURL } = auth.currentUser;
 		await addDoc(collection(db, "nexil-chat-db"), {
-			text: message,
+			text: textFilter.clean(message),
 			name: displayName,
 			avatar: photoURL,
 			createdAt: serverTimestamp(),
