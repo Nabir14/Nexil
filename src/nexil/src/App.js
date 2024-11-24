@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { auth, db } from "./firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit, } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit, doc, deleteDoc} from "firebase/firestore";
 import { Filter } from 'bad-words';
 
 import './App.css';
@@ -121,8 +121,13 @@ const ReceivedMessage = ({ message }) => {
 }
 
 const SentMessage = ({ message }) => {
+	const deleteMessage = async () => {
+		await deleteDoc(doc(db, "nexil-chat-db", message.id))
+	}
 	return (
       <div className="py-1 flex justify-end text-white">
+		<button className="w-4 h-4 pr-5 rounded-full" onClick={deleteMessage}>🗑️</button>
+
     <div className="bg-neutral-800 border-0 rounded-b-md rounded-l-md max-w-[65%] inline-block">
 	<div className="text-right px-1 py-1">
       <p className="italic font-bold text-sm">{message.name}</p>
@@ -236,7 +241,7 @@ const PublicChatRoom = ({ setRoom }) => {
 const LoadingPage = () => {
 	return (
 		<div className="h-screen flex items-center justify-center">
-			<h1 className="italic font-bold text-3xl text-white">🌐 Loading...</h1>
+			<h1 className="font-bold text-3xl text-white">🌐 Loading...</h1>
 		</div>
 	);
 }
