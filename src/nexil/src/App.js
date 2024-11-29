@@ -102,6 +102,36 @@ const SendMessage = ({scroll, trigger}) => {
   );
 };
 
+const MessageControls = ({ setMControl, message }) => {
+	const [deleteAlertBox, setDAlertBox] = useState(false)
+	const deleteMessage = async () => {
+		await deleteDoc(doc(db, "nexil-chat-db", message.id))
+		setDAlertBox(false)
+	}
+	return (
+		<div>
+		<button className="w-4 h-4 pr-5 rounded-full" onClick={() => setDAlertBox(true)}>🗑️ </button>
+		<br />
+		<button className="w-4 h-4 pr-5 rounded-full">🗨️</button>
+		{deleteAlertBox ? (
+		<div className="bg-black bg-opacity-70 rounded-md fixed inset-0 z-50 flex items-center justify-center">
+		<div>
+		<h1 className="text-xl font-bold text-white py-2">Do You Want To Delete This Message?</h1>
+		<div className="flex justify-center">
+		<div className="px-2">
+		<button onClick={deleteMessage} className="bg-zinc-800 rounded-xl px-4 py-2 text-white text-center hover:bg-white hover:text-black">Yes</button>
+		</div>
+		<div className="px-2">
+		<button onClick={() => setDAlertBox(false)} className="px-4 py-2 rounded-xl bg-zinc-800 text-white text-center hover:bg-white hover:text-black">No</button>
+		</div>
+		</div>
+		</div>
+		</div>
+		) : null}
+		</div>
+	);
+}
+
 const ReceivedMessage = ({ message }) => {
 	return (
       <div className="py-1 flex justify-start text-white">
@@ -118,18 +148,22 @@ const ReceivedMessage = ({ message }) => {
       </div>
       </div>
   );
-}
+};
 
 const SentMessage = ({ message }) => {
-	const deleteMessage = async () => {
-		await deleteDoc(doc(db, "nexil-chat-db", message.id))
+	const [mControl, setMControl] = useState(false)
+	const mControlTrigger = () => {
+		if(mControl === true){
+			setMControl(false)
+		}else{
+			setMControl(true)
+		}
 	}
 	return (
       <div className="py-1 flex justify-end text-white">
-		<button className="w-4 h-4 pr-5 rounded-full" onClick={deleteMessage}>🗑️</button>
-
+		{mControl ? <MessageControls setMControl={setMControl} message={message} /> : null}
     <div className="bg-neutral-800 border-0 rounded-b-md rounded-l-md max-w-[65%] inline-block">
-	<div className="text-right px-1 py-1">
+	<div className="text-right px-1 py-1" onClick={mControlTrigger}>
       <p className="italic font-bold text-sm">{message.name}</p>
       <p className="break-words">{message.text}</p>
 		</div>
@@ -148,7 +182,7 @@ const MessageInfoContainer = ({ message }) => {
 
   return (
     <div>
-	  {message.uid === user.uid ? <SentMessage message={message}/> : <ReceivedMessage message={message}/>}
+	  {message.uid === user.uid ? <SentMessage message={message} /> : <ReceivedMessage message={message}/>}
       </div>
   );
 };
@@ -160,8 +194,8 @@ const MessageBody =  ({ setRoom }) => {
   useEffect(() => {
     const q = query(
       collection(db, "nexil-chat-db"),
-      orderBy("createdAt", "desc"),
-      limit(50)
+      orderBy("createdAt"),
+      limit(128)
     );
 
     const unsubscribe = onSnapshot(q, (QuerySnapshot) => {
@@ -178,7 +212,7 @@ const MessageBody =  ({ setRoom }) => {
   }, []);
 
   return (
-	  <main>
+	  <main onLoad={() => scroll.current.scrollIntoView({ behavior: "smooth" })}>
 	  <div>
 	{messages?.map((message) => (
           <MessageInfoContainer key={message.id} message={message} />
@@ -258,7 +292,7 @@ function App() {
     setTimeout(() => {
       setLoading(false);
       setRoom(roomId);
-    }, 5000);
+    }, 500);
   };
 
   return (
