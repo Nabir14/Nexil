@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { auth, db } from "./firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { updateProfile } from "firebase/auth";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit, doc, deleteDoc} from "firebase/firestore";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Filter } from 'bad-words';
 
 import './App.css';
@@ -13,7 +15,40 @@ import replyIcon from "./images/reply.svg"
 import backIcon from "./images/back.svg"
 import nexilIcon from "./images/nexil-icon-transparent.png"
 
-function NavHeader(){
+function UserEditRoom({ setRoom }){
+	const [username, setUsername] = useState("");
+	const textFilter = new Filter();
+	
+	const saveUsername = (e) => {
+		if(username.length > 3){
+			updateProfile(auth.currentUser, {displayName: textFilter.clean(username)})
+			setRoom(0)
+		}else{
+			alert("Username Should Be Atleast 3 Characters Long!")
+		}
+	}
+
+
+	return (
+		<div className="h-screen flex justify-center items-center bg-neutral-950">
+		<form onSubmit={() =>  saveUsername()}>
+		<h1 className="text-3xl font-bold text-white text-center pb-4">Customize Your Profile</h1>
+		<div className="flex">
+			<p className="text-md font-bold text-white px-2">Username:</p>
+			<input type="text" id="username" onChange={(e) => setUsername(e.target.value)} placeholder={auth.currentUser.displayName} />
+		</div>
+		<div className="flex justify-center items-center py-2">
+			<button className="rounded-full bg-white hover:bg-purple-900 hover:text-white font-bold px-2 py-2" type="submit">Save Changes</button>
+		<div className="px-2">
+			<button onClick={() => setRoom(0)} className="rounded-full bg-white hover:bg-purple-900 hover:text-white font-bold px-2 py-2">Cancel</button>
+		</div>
+		</div>
+		</form>
+		</div>
+	);
+}
+
+function NavHeader({ setRoom }){
 	const [user] = useAuthState(auth);
 	const signOut = () => {
 		auth.signOut();
@@ -27,9 +62,15 @@ function NavHeader(){
 		</div>
 			<nav className="flex-shrink-0">
 		{user ? (
-			<button onClick={signOut} type="button" className="border-0 bg-none px-2 py-2">
+			<div className="flex">
+		<button onClick={signOut} type="button" className="border-0 bg-none px-2 py-2">
 				<img src={logoutIcon} alt="logout" />
-			</button>
+		</button>
+		<button onClick={() => setRoom(10)}type="button" className="border-0 w-12 bg-none px-2 py-2">
+
+				<img src={user.photoURL} alt="userPfp" className="rounded-full" />
+		</button>
+			</div>
 		) : (
 			<span></span>
 		)}
@@ -195,7 +236,6 @@ const MessageBody =  ({ setRoom }) => {
     const q = query(
       collection(db, "nexil-chat-db"),
       orderBy("createdAt"),
-      limit(128)
     );
 
     const unsubscribe = onSnapshot(q, (QuerySnapshot) => {
@@ -212,7 +252,7 @@ const MessageBody =  ({ setRoom }) => {
   }, []);
 
   return (
-	  <main onLoad={() => scroll.current.scrollIntoView({ behavior: "smooth" })}>
+	  <main onLoad={() => scroll.current.scrollIntoView({ behavior: "auto" })}>
 	  <div>
 	{messages?.map((message) => (
           <MessageInfoContainer key={message.id} message={message} />
@@ -297,11 +337,13 @@ function App() {
 
   return (
     <div className="App bg-neutral-950">
-	  <NavHeader />
+	  <NavHeader setRoom={setRoom}/>
 	  {!user ? (
         <LoginAlert />
       ) : loading ? (
         <LoadingPage />
+      ) : room === 10 ? (
+        <UserEditRoom setRoom={setRoom} />
       ) : room === 0 ? (
         <Lobby enterRoom={enterRoom} />
       ) : room === 1 ? (
