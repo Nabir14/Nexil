@@ -21,7 +21,7 @@ function UserEditRoom({ setRoom }){
 	
 	const saveUsername = (e) => {
 		if(username.length > 3){
-			updateProfile(auth.currentUser, {displayName: textFilter.clean(username)})
+			updateProfile(auth.currentUser, {displayName: username})
 			setRoom(0)
 		}else{
 			alert("Username Should Be Atleast 3 Characters Long!")
@@ -103,7 +103,6 @@ function LoginAlert(){
 
 const SendMessage = ({scroll, trigger, readDB}) => {
 	const [message, setMessage] = useState("");
-	const textFilter = new Filter();
 
 	const sendMessage = async (event) => {
 		event.preventDefault();
@@ -114,7 +113,7 @@ const SendMessage = ({scroll, trigger, readDB}) => {
 		}
 		const { uid, displayName, photoURL } = auth.currentUser;
 		await addDoc(collection(db, readDB), {
-			text: textFilter.clean(message),
+			text: message,
 			name: displayName,
 			avatar: photoURL,
 			createdAt: serverTimestamp(),
@@ -173,7 +172,17 @@ const MessageControls = ({ setMControl, message, dbName }) => {
 	);
 }
 
-const ReceivedMessage = ({ message }) => {
+const ReceivedMessage = ({ message, pf }) => {
+	const textFilter = new Filter();
+	const [text, setText] = useState(message.text);
+	const [username, setUsername] = useState(message.name);
+	const checkProfanityFilter = () => {
+		if (pf === true){
+			const textFilter = new Filter();
+			setText(textFilter.clean(message.text));
+			setUsername(textFilter.clean(message.name));
+		}
+	}
 	return (
       <div className="py-1 flex justify-start text-white">
 		    <img 
@@ -183,16 +192,18 @@ const ReceivedMessage = ({ message }) => {
 		/>
     <div className="bg-neutral-800 border-0 rounded-b-md rounded-r-md max-w-[65%] inline-block">
       <div className="text-left px-1 py-1">
-      <p className="italic font-bold text-sm">{message.name}</p>
-      <p className="break-words">{message.text}</p>
+      <p className="italic font-bold text-sm">{username}</p>
+      <p className="break-words">{text}</p>
       </div>
       </div>
       </div>
   );
 };
 
-const SentMessage = ({ message, dbName }) => {
-	const [mControl, setMControl] = useState(false)
+const SentMessage = ({ message, dbName, pf }) => {
+	const [mControl, setMControl] = useState(false);
+	const [text, setText] = useState(message.text);
+	const [username, setUsername] = useState(message.name);
 	const mControlTrigger = () => {
 		if(mControl === true){
 			setMControl(false)
@@ -200,13 +211,20 @@ const SentMessage = ({ message, dbName }) => {
 			setMControl(true)
 		}
 	}
+	const checkProfanityFilter = () => {
+		if (pf === true){
+			const textFilter = new Filter();
+			setText(textFilter.clean(message.text));
+			setUsername(textFilter.clean(message.name));
+		}
+	}
 	return (
-      <div className="py-1 flex justify-end text-white">
+      <div className="py-1 flex justify-end text-white" onLoad={checkProfanityFilter}>
 		{mControl ? <MessageControls setMControl={setMControl} message={message} dbName={dbName} /> : null}
     <div className="bg-neutral-800 border-0 rounded-b-md rounded-l-md max-w-[65%] inline-block">
 	<div className="text-right px-1 py-1" onClick={mControlTrigger}>
-      <p className="italic font-bold text-sm">{message.name}</p>
-      <p className="break-words">{message.text}</p>
+      <p className="italic font-bold text-sm">{username}</p>
+      <p className="break-words">{text}</p>
 		</div>
       </div>
 		    <img 
@@ -218,17 +236,17 @@ const SentMessage = ({ message, dbName }) => {
   );
 }
 
-const MessageInfoContainer = ({ message, dbName }) => {
+const MessageInfoContainer = ({ message, dbName, pf }) => {
   const [user] = useAuthState(auth);
 
   return (
     <div>
-	  {message.uid === user.uid ? <SentMessage message={message} dbName={dbName}/> : <ReceivedMessage message={message}/>}
+	  {message.uid === user.uid ? <SentMessage message={message} dbName={dbName} pf={pf}/> : <ReceivedMessage message={message} pf={pf}/>}
       </div>
   );
 };
 
-const MessageBody =  ({ setRoom, readDB }) => {
+const MessageBody =  ({ setRoom, readDB, pf }) => {
   const [messages, setMessages] = useState([]);
   const scroll = useRef();
 
@@ -255,7 +273,7 @@ const MessageBody =  ({ setRoom, readDB }) => {
 	  <main onLoad={() => scroll.current.scrollIntoView({ behavior: "auto" })}>
 	  <div>
 	{messages?.map((message) => (
-          <MessageInfoContainer key={message.id} message={message} dbName={readDB} />
+          <MessageInfoContainer key={message.id} message={message} dbName={readDB} pf={pf} />
         ))}
 	  </div>
 	  <span ref={scroll}></span>
@@ -267,6 +285,7 @@ const MessageBody =  ({ setRoom, readDB }) => {
 
 const PCRCard = ({ trigger }) => {
 	return (
+		<div className="pt-2">
 		<div className="max-w-sm p-6 bg-white border rounded-lg shadow bg-zinc-900 border-neutral-700 transition ease-in-out hover:shadow-lg hover:shadow-fuchsia-500/50">
     <h5 className="mb-2 text-2xl font-bold tracking-tight text-white">
       Public Chat Room
@@ -293,12 +312,27 @@ const PCRCard = ({ trigger }) => {
     </svg>
   </button>
 </div>
+		</div>
 );
 }
 
-const PRCRCard = ({ setRoom, setDBName }) => {
+const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
+	const [tti, setTTI] = useState("")
 	const [dbCon, setDBCon] = useState(false);
+	const setProfanityFilter = () => {
+		if(pf === true){
+			setPF(false);
+		}else{
+			setPF(true)
+		}
+	}
+	const createDB = () => {
+		setDBName(tti);
+		setRoom(2);
+	}
+
 	return (
+		<div className="pt-2">
 		<div className="max-w-sm p-6 bg-white border rounded-lg shadow bg-zinc-900 border-neutral-700 transition ease-in-out hover:shadow-lg hover:shadow-fuchsia-500/50">
     <h5 className="mb-2 text-2xl font-bold tracking-tight text-white">
       Private Chat Room
@@ -325,49 +359,56 @@ const PRCRCard = ({ setRoom, setDBName }) => {
     </svg>
   </button>
 		{dbCon ? (
-		<div className="h-screen flex justify-center items-center bg-neutral-950">
-		<form onSubmit={() => setRoom(2)}>
-		<h1 className="text-3xl font-bold text-white text-center pb-4">Private Room</h1>
-		<div className="flex">
-			<p className="text-md font-bold text-white px-2">Room Code:</p>
-			<input type="text" id="roomCode" onChange={(e) => setDBName(e.target.value)} placeholder="your room code" />
-		</div>
+		<div className="h-screen flex justify-center items-center bg-neutral-950 bg-opacity-75 fixed inset-0">
+		<form onSubmit={createDB} className="max-w-md w-4/5 fixed">
+		<h1 className="text-3xl font-bold text-white text-center pb-4">Create Private Room</h1>
+		<div className="flex-col">
+			<div className="flex">
+			<p className="text-md font-bold text-white px-2">RoomID:</p>
+			<input type="text" id="roomID" onChange={(e) => setTTI(e.target.value)} placeholder="Type room code here" />
+			</div>
+			<div className="flex pt-4">
+			<p className="text-sm font-bold text-white px-2">Profanity Filter:</p>
+			<input type="checkbox" id="filterWords" checked={pf} onChange={setProfanityFilter}/>
+			</div>
+			</div>
 		<div className="flex justify-center items-center py-2">
 			<button className="rounded-full bg-white hover:bg-purple-900 hover:text-white font-bold px-2 py-2" type="submit">CreateDB</button>
-		<div className="px-2">
 			<button onClick={() => setRoom(0)} className="rounded-full bg-white hover:bg-purple-900 hover:text-white font-bold px-2 py-2">Cancel</button>
+		<div className="px-2">
 		</div>
 		</div>
 		</form>
 		</div> 
 		) : null}
 </div>
+		</div>
 );
 }
 
-const Lobby = ({ setRoom, enterRoom, setDBName}) => {
+const Lobby = ({ setRoom, enterRoom, setDBName, pf, setPF}) => {
 	return (
-		<div className="h-screen flex items-center justify-center">
+		<div className="h-screen flex-col items-center justify-center">
 			<PCRCard trigger={() => enterRoom(1)}/>
-			<PRCRCard setRoom={setRoom} setDBName={setDBName}/>
+			<PRCRCard setRoom={setRoom} setDBName={setDBName} pf={pf} setPF={setPF}/>
 		</div>
 
 	);
 }
 
 
-const PublicChatRoom = ({ setRoom }) => {
+const PublicChatRoom = ({ setRoom, pf }) => {
 	return(
 		<div>
-			<MessageBody setRoom={setRoom} readDB="nexil-chat-db" />
+			<MessageBody setRoom={setRoom} readDB="nexil-chat-db" pf={true}/>
 		</div>
 	);
 }
 
-const PrivateRoom = ({ setRoom, dbName }) => {
+const PrivateRoom = ({ setRoom, dbName, pf}) => {
 	return(
 		<div>
-			<MessageBody setRoom={setRoom} readDB={dbName} />
+			<MessageBody setRoom={setRoom} readDB={dbName}pf={pf}/>
 		</div>
 	);
 }
@@ -386,6 +427,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [targetRoom, setTargetRoom] = useState(null);
   const [dbName, setDBName] = useState("");
+  const [pf, setPF] = useState(false);
 
   const enterRoom = (roomId) => {
     setTargetRoom(roomId);
@@ -406,13 +448,13 @@ function App() {
       ) : room === 10 ? (
         <UserEditRoom setRoom={setRoom} />
       ) : room === 0 ? (
-        <Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName} />
+        <Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName} pf={pf} setPF={setPF} />
       ) : room === 1 ? (
-        <PublicChatRoom setRoom={setRoom} />
+        <PublicChatRoom setRoom={setRoom} pf={pf}/>
       ) : room === 2 ? (
-	<PrivateRoom setRoom={setRoom} dbName={dbName}/>
+	<PrivateRoom setRoom={setRoom} dbName={dbName} pf={pf}/>
       ) : (
-	<Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName}/>
+	<Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName} pf={pf} setPF={setPF}/>
       )}
     </div>
   );
