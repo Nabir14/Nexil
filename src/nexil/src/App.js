@@ -20,6 +20,7 @@ function UserEditRoom({ setRoom }){
 	const textFilter = new Filter();
 	
 	const saveUsername = (e) => {
+		e.preventDefault();
 		if(username.length > 3){
 			updateProfile(auth.currentUser, {displayName: username})
 			setRoom(0)
@@ -30,7 +31,7 @@ function UserEditRoom({ setRoom }){
 
 	return (
 		<div className="h-screen flex justify-center items-center bg-neutral-950">
-		<form onSubmit={() =>  saveUsername()}>
+		<form onSubmit={saveUsername}>
 		<h1 className="text-3xl font-bold text-white text-center pb-4">Customize Your Profile</h1>
 		<div className="flex">
 			<p className="text-md font-bold text-white px-2">Username:</p>
@@ -184,7 +185,7 @@ const ReceivedMessage = ({ message, pf }) => {
 		}
 	}
 	return (
-      <div className="py-1 flex justify-start text-white">
+      <div className="py-1 flex justify-start text-white" onLoad={checkProfanityFilter}>
 		    <img 
 		className="border-0 rounded-full mr-2 w-1/2 w-8 h-8" 
 		src={message.avatar} 
@@ -326,9 +327,14 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
 			setPF(true)
 		}
 	}
-	const createDB = () => {
-		setDBName(tti);
-		setRoom(2);
+	const createDB = (e) => {
+		e.preventDefault();
+		if(tti === ""){
+			alert("Database ID Cannot Be Null");
+		}else{
+			setDBName(tti);
+			setRoom(2);
+		}
 	}
 
 	return (
@@ -374,7 +380,7 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
 			</div>
 		<div className="flex justify-center items-center py-2">
 			<button className="rounded-full bg-white hover:bg-purple-900 hover:text-white font-bold px-2 py-2" type="submit">CreateDB</button>
-			<button onClick={() => setRoom(0)} className="rounded-full bg-white hover:bg-purple-900 hover:text-white font-bold px-2 py-2">Cancel</button>
+			<button onClick={(e) => {e.preventDefault(); setRoom(0); setDBCon(false);}} className="rounded-full bg-white hover:bg-purple-900 hover:text-white font-bold px-2 py-2">Cancel</button>
 		<div className="px-2">
 		</div>
 		</div>
