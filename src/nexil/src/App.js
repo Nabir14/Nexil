@@ -6,6 +6,7 @@ import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit, doc, deleteDoc} from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Filter } from 'bad-words';
+import { getSHA256Hash } from "boring-webcrypto-sha256";
 
 import './App.css';
 import googleIcon from "./images/google.svg"
@@ -127,7 +128,7 @@ const SendMessage = ({scroll, trigger, readDB}) => {
     <form onSubmit={(event) => sendMessage(event)} className="sticky bottom-0 bg-none flex items-center justify-between">
       <button className="transition ease-in-out delay-300 bg-neutral-800 px-2 py-2 hover:bg-neutral-900" onClick={() => trigger(0)}><img src={backIcon} alt="back" /></button>
       <label htmlFor="messageInput" hidden>
-        Enter Message
+        Aa
       </label>
       <input
         id="messageInput"
@@ -318,8 +319,12 @@ const PCRCard = ({ trigger }) => {
 }
 
 const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
-	const [tti, setTTI] = useState("")
+	const [roomName, setRN] = useState("");
+	const [roomID, setRID] = useState("");
 	const [dbCon, setDBCon] = useState(false);
+	const [cr, setCR] = useState(false);
+	const [formText, setFT] = useState("Join Room");
+	
 	const setProfanityFilter = () => {
 		if(pf === true){
 			setPF(false);
@@ -327,12 +332,39 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
 			setPF(true)
 		}
 	}
+	const setCreateRoom = () => {
+		if(cr === true){
+			setCR(false);
+		}else{
+			setCR(true);
+		}
+	}
+	const createHash = async () => {
+		const textAsBuffer = new TextEncoder().encode(Math.floor((Math.random() * 9999999999999999) + 1));
+		const hashBuffer = await window.crypto.subtle.digest("SHA-256", textAsBuffer);
+		const hashArray = Array.from(new Uint8Array(hashBuffer));
+		const hash = hashArray
+			.map((item) => item.toString(16).padStart(2, "0"))
+			.join("");
+		setRID(hash);
+	};
+	const formButton = () => {
+		if(cr === false){
+			setFT("Create Room");
+		}else{
+			setFT("Join Room");
+		}
+	}
 	const createDB = (e) => {
 		e.preventDefault();
-		if(tti === ""){
-			alert("Database ID Cannot Be Null");
+		if(roomName === ""){
+			alert("Room Name Cannot Be Empty");
 		}else{
-			setDBName(tti);
+			if(cr === true){
+				setDBName(roomName+"-"+roomID);
+			}else{
+				setDBName(roomName);
+			}
 			setRoom(2);
 		}
 	}
@@ -346,7 +378,7 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
   <p className="mb-3 font-normal text-gray-400">
     Your private space.
   </p>
-  <button className="transition ease-in-out delay-500 inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white rounded-lg bg-gradient-to-r from-blue-800 to-fuchsia-500 hover:border-2 hover:border-blue-500" onClick={() => setDBCon(true)} >
+  <button className="transition ease-in-out delay-500 inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white rounded-lg bg-gradient-to-r from-blue-800 to-fuchsia-500 hover:border-2 hover:border-blue-500" onClick={() => {setDBCon(true); createHash();}} >
     Enter
     <svg
       className="rtl:rotate-180 w-3.5 h-3.5 ms-2"
@@ -370,16 +402,26 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
 		<h1 className="text-3xl font-bold text-white text-center pb-4">Create Private Room</h1>
 		<div className="flex-col">
 			<div className="flex">
-			<p className="text-md font-bold text-white px-2">RoomID:</p>
-			<input type="text" id="roomID" onChange={(e) => setTTI(e.target.value)} placeholder="Type room code here" />
+			<p className="text-md font-bold text-white px-2">Room Name:</p>
+			<input type="text" id="roomName" onChange={(e) => setRN(e.target.value)} placeholder="Type room name here" />
 			</div>
+			{cr ?
+			<div className="flex pt-2">
+			<p className="text-md font-bold text-white px-2">RoomID:</p>
+			<input type="text" id="roomID" value={roomID} disabled/>
+			</div>
+			: null}
 			<div className="flex pt-4">
 			<p className="text-sm font-bold text-white px-2">Profanity Filter:</p>
 			<input type="checkbox" id="filterWords" checked={pf} onChange={setProfanityFilter}/>
 			</div>
+			<div className="flex">
+			<p className="text-sm font-bold text-white px-2">Create New Room:</p>
+			<input type="checkbox" id="filterWords" checked={cr} onChange={() => {setCreateRoom(); formButton();}}/>
+			</div>
 			</div>
 		<div className="flex justify-center items-center py-2">
-			<button className="rounded-full bg-white hover:bg-purple-900 hover:text-white font-bold px-2 py-2" type="submit">CreateDB</button>
+			<button className="rounded-full bg-white hover:bg-purple-900 hover:text-white font-bold px-2 py-2" type="submit">{formText}</button>
 			<button onClick={(e) => {e.preventDefault(); setRoom(0); setDBCon(false);}} className="rounded-full bg-white hover:bg-purple-900 hover:text-white font-bold px-2 py-2">Cancel</button>
 		<div className="px-2">
 		</div>
