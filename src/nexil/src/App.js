@@ -3,7 +3,7 @@ import { auth, db } from "./firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { updateProfile } from "firebase/auth";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit, doc, deleteDoc} from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit, doc, getDocs, deleteDoc, getFirestore, where} from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Filter } from 'bad-words';
 import { getSHA256Hash } from "boring-webcrypto-sha256";
@@ -339,6 +339,7 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
 			setCR(true);
 		}
 	}
+
 	const createHash = async () => {
 		const textAsBuffer = new TextEncoder().encode(Math.floor((Math.random() * 9999999999999999) + 1));
 		const hashBuffer = await window.crypto.subtle.digest("SHA-256", textAsBuffer);
@@ -348,6 +349,7 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
 			.join("");
 		setRID(hash);
 	};
+
 	const formButton = () => {
 		if(cr === false){
 			setFT("Create Room");
@@ -355,17 +357,55 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
 			setFT("Join Room");
 		}
 	}
-	const createDB = (e) => {
+	const checkRoomExists = async () => {
+		const roomRef = collection(db, roomName);
+		const roomSnapshot = await getDocs(roomRef);
+		if (roomSnapshot.empty) {
+			return false;
+		}else{
+			return true;
+		}
+	}
+
+	const createDB = async (e) => {
 		e.preventDefault();
 		if(roomName === ""){
 			alert("Room Name Cannot Be Empty");
+
 		}else{
 			if(cr === true){
-				setDBName(roomName+"-"+roomID);
+				const exists = await checkRoomExists();
+				if(exists){
+					await createHash();
+					setDBName(roomName+"-"+roomID);
+					setRoom(2);
+					await addDoc(collection(db, roomName+"-"+roomID), {
+						text: roomName+"-"+roomID,
+						name: "Nexil",
+						avatar: nexilIcon,
+						createdAt: serverTimestamp(),
+					});
+				}else{
+					setDBName(roomName+"-"+roomID);
+					setRoom(2);
+					await addDoc(collection(db, roomName+"-"+roomID), {
+						text: roomName+"-"+roomID,
+						name: "Nexil",
+						avatar: nexilIcon,
+						createdAt: serverTimestamp(),
+					});
+				}
 			}else{
-				setDBName(roomName);
+				const exists = await checkRoomExists();
+				if (exists) {
+					setDBName(roomName);
+					setRoom(2);
+				}else{
+					alert("Room Not Found!");
+					return;
+				}
+
 			}
-			setRoom(2);
 		}
 	}
 
