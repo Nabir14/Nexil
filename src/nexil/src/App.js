@@ -3,7 +3,7 @@ import { auth, db } from "./firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { updateProfile } from "firebase/auth";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit, doc, getDocs, deleteDoc, getFirestore, where} from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit, doc, getDocs, deleteDoc, getFirestore, where, writeBatch} from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Filter } from 'bad-words';
 import { getSHA256Hash } from "boring-webcrypto-sha256";
@@ -103,7 +103,7 @@ function LoginAlert(){
 	);
 }
 
-const SendMessage = ({scroll, trigger, readDB}) => {
+const SendMessage = ({scroll, trigger, readDB, doe}) => {
 	const [message, setMessage] = useState("");
 
 	const sendMessage = async (event) => {
@@ -124,9 +124,27 @@ const SendMessage = ({scroll, trigger, readDB}) => {
 		setMessage("");
 		scroll.current.scrollIntoView({ behavior: "smooth" });
 	};
+	const deleteUserMessages = async (roomName) => {
+		const user = auth.currentUser;
+		const messagesRef = collection(db, roomName);
+		const q = query(messagesRef, where("uid", "==", user.uid));
+		const querySnapshot = await getDocs(q);
+		const batch = writeBatch(db);
+		querySnapshot.forEach((doc) => {
+			batch.delete(doc.ref);
+		});
+		await batch.commit();
+	};
+	const handleExitRoom = async () => {
+		if(doe === true){
+			await deleteUserMessages(readDB);
+		}
+		trigger(0);
+	};
+
   return (
-    <form onSubmit={(event) => sendMessage(event)} className="sticky bottom-0 bg-none flex items-center justify-between">
-      <button className="transition ease-in-out delay-300 bg-neutral-800 px-2 py-2 hover:bg-neutral-900" onClick={() => trigger(0)}><img src={backIcon} alt="back" /></button>
+    <form onSubmit={(event) => sendMessage(event)} className="sticky bottom-0 bg-none flex items-center justify-between w-screen">
+      <button className="transition ease-in-out delay-300 bg-neutral-800 px-2 py-2 hover:bg-neutral-900 h-10" onClick={handleExitRoom}><img src={backIcon} alt="back" /></button>
       <label htmlFor="messageInput" hidden>
         Aa
       </label>
@@ -134,12 +152,12 @@ const SendMessage = ({scroll, trigger, readDB}) => {
         id="messageInput"
         name="messageInput"
         type="text"
-        className="bg-neutral-800 text-white border-0 px-2 py-2 w-screen h-full"
-        placeholder="message"
+        className="bg-neutral-800 text-white border-0 px-2 py-2 w-screen"
+        placeholder="Aa"
 	value={message}
         onChange={(e) => setMessage(e.target.value)}
       />
-      <button type="submit" className="transition ease-in-out delay-300 bg-blue-600 px-2 py-2 hover:bg-purple-600"><img src={sendIcon} alt="send" /></button>
+      <button type="submit" className="transition ease-in-out delay-300 bg-blue-600 px-2 py-2 hover:bg-purple-600 h-10"><img src={sendIcon} alt="send" /></button>
     </form>
   );
 };
@@ -192,8 +210,8 @@ const ReceivedMessage = ({ message, pf }) => {
 		src={message.avatar} 
 		alt="userAvatar" 
 		/>
-    <div className="bg-neutral-800 border-0 rounded-b-md rounded-r-md max-w-[65%] inline-block">
-      <div className="text-left px-1 py-1">
+    <div className="bg-neutral-800 border-0 rounded-b-xl rounded-r-xl max-w-[65%] inline-block">
+      <div className="text-left p-2">
       <p className="italic font-bold text-sm">{username}</p>
       <p className="break-words">{text}</p>
       </div>
@@ -223,8 +241,8 @@ const SentMessage = ({ message, dbName, pf }) => {
 	return (
       <div className="py-1 flex justify-end text-white" onLoad={checkProfanityFilter}>
 		{mControl ? <MessageControls setMControl={setMControl} message={message} dbName={dbName} /> : null}
-    <div className="bg-neutral-800 border-0 rounded-b-md rounded-l-md max-w-[65%] inline-block">
-	<div className="text-right px-1 py-1" onClick={mControlTrigger}>
+    <div className="bg-neutral-800 border-0 rounded-b-xl rounded-l-xl max-w-[65%] inline-block">
+	<div className="text-right p-2" onClick={mControlTrigger}>
       <p className="italic font-bold text-sm">{username}</p>
       <p className="break-words">{text}</p>
 		</div>
@@ -238,7 +256,7 @@ const SentMessage = ({ message, dbName, pf }) => {
   );
 }
 
-const MessageInfoContainer = ({ message, dbName, pf }) => {
+const MessageInfoContainer = ({ message, dbName, pf, doe }) => {
   const [user] = useAuthState(auth);
 
   return (
@@ -248,7 +266,7 @@ const MessageInfoContainer = ({ message, dbName, pf }) => {
   );
 };
 
-const MessageBody =  ({ setRoom, readDB, pf }) => {
+const MessageBody =  ({ setRoom, readDB, pf, doe }) => {
   const [messages, setMessages] = useState([]);
   const scroll = useRef();
 
@@ -279,7 +297,7 @@ const MessageBody =  ({ setRoom, readDB, pf }) => {
         ))}
 	  </div>
 	  <span ref={scroll}></span>
-          <SendMessage scroll={scroll} trigger={ setRoom } readDB={ readDB }/>
+          <SendMessage scroll={scroll} trigger={ setRoom } readDB={ readDB } doe={ doe }/>
 	  </main>
   );
 };
@@ -318,7 +336,7 @@ const PCRCard = ({ trigger }) => {
 );
 }
 
-const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
+const PRCRCard = ({ setRoom, setDBName, pf, setPF, doe, setDOE }) => {
 	const [roomName, setRN] = useState("");
 	const [roomID, setRID] = useState("");
 	const [dbCon, setDBCon] = useState(false);
@@ -329,7 +347,14 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
 		if(pf === true){
 			setPF(false);
 		}else{
-			setPF(true)
+			setPF(true);
+		}
+	}
+	const setDeleteOnExit = () => {
+		if(doe === true){
+			setDOE(false);
+		}else{
+			setDOE(true);
 		}
 	}
 	const setCreateRoom = () => {
@@ -456,6 +481,10 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
 			<input type="checkbox" id="filterWords" checked={pf} onChange={setProfanityFilter}/>
 			</div>
 			<div className="flex">
+			<p className="text-sm font-bold text-white px-2">Delete Messages On Exit:</p>
+			<input type="checkbox" id="DeleteOnExit" checked={doe} onChange={setDeleteOnExit}/>
+			</div>
+			<div className="flex">
 			<p className="text-sm font-bold text-white px-2">Create New Room:</p>
 			<input type="checkbox" id="filterWords" checked={cr} onChange={() => {setCreateRoom(); formButton();}}/>
 			</div>
@@ -474,29 +503,29 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF}) => {
 );
 }
 
-const Lobby = ({ setRoom, enterRoom, setDBName, pf, setPF}) => {
+const Lobby = ({ setRoom, enterRoom, setDBName, pf, setPF, doe, setDOE}) => {
 	return (
 		<div className="h-screen flex-col items-center justify-center">
 			<PCRCard trigger={() => enterRoom(1)}/>
-			<PRCRCard setRoom={setRoom} setDBName={setDBName} pf={pf} setPF={setPF}/>
+			<PRCRCard setRoom={setRoom} setDBName={setDBName} pf={pf} setPF={setPF} doe={doe} setDOE={setDOE}/>
 		</div>
 
 	);
 }
 
 
-const PublicChatRoom = ({ setRoom, pf }) => {
+const PublicChatRoom = ({ setRoom }) => {
 	return(
 		<div>
-			<MessageBody setRoom={setRoom} readDB="nexil-chat-db" pf={true}/>
+			<MessageBody setRoom={setRoom} readDB="nexil-chat-db" pf={true} doe={false}/>
 		</div>
 	);
 }
 
-const PrivateRoom = ({ setRoom, dbName, pf}) => {
+const PrivateRoom = ({ setRoom, dbName, pf, doe}) => {
 	return(
 		<div>
-			<MessageBody setRoom={setRoom} readDB={dbName}pf={pf}/>
+			<MessageBody setRoom={setRoom} readDB={dbName} pf={pf} doe={doe}/>
 		</div>
 	);
 }
@@ -516,6 +545,7 @@ function App() {
   const [targetRoom, setTargetRoom] = useState(null);
   const [dbName, setDBName] = useState("");
   const [pf, setPF] = useState(false);
+  const [doe, setDOE] = useState(false);
 
   const enterRoom = (roomId) => {
     setTargetRoom(roomId);
@@ -536,13 +566,13 @@ function App() {
       ) : room === 10 ? (
         <UserEditRoom setRoom={setRoom} />
       ) : room === 0 ? (
-        <Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName} pf={pf} setPF={setPF} />
+        <Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName} pf={pf} setPF={setPF} doe={doe} setDOE={setDOE}/>
       ) : room === 1 ? (
-        <PublicChatRoom setRoom={setRoom} pf={pf}/>
+        <PublicChatRoom setRoom={setRoom}/>
       ) : room === 2 ? (
-	<PrivateRoom setRoom={setRoom} dbName={dbName} pf={pf}/>
+	<PrivateRoom setRoom={setRoom} dbName={dbName} pf={pf} doe={doe}/>
       ) : (
-	<Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName} pf={pf} setPF={setPF}/>
+	<Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName} pf={pf} setPF={setPF} doe={doe} setDOE={setDOE}/>
       )}
     </div>
   );
