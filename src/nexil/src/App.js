@@ -103,7 +103,7 @@ function LoginAlert(){
 	);
 }
 
-const SendMessage = ({scroll, trigger, readDB, doe}) => {
+const SendMessage = ({scroll, trigger, readDB, doe, sessionTime, setSessionTime}) => {
 	const [message, setMessage] = useState("");
 
 	const sendMessage = async (event) => {
@@ -119,15 +119,29 @@ const SendMessage = ({scroll, trigger, readDB, doe}) => {
 			name: displayName,
 			avatar: photoURL,
 			createdAt: serverTimestamp(),
+			sessionTime: sessionTime,
 			uid,
 		});
 		setMessage("");
 		scroll.current.scrollIntoView({ behavior: "smooth" });
 	};
-	const deleteUserMessages = async (roomName) => {
+	const deleteUserMessages = async (roomName, cs) => {
 		const user = auth.currentUser;
 		const messagesRef = collection(db, roomName);
-		const q = query(messagesRef, where("uid", "==", user.uid));
+		let q;
+		if (cs){
+			q = query(
+				messagesRef,
+				where("uid", "==", user.uid),
+				where("sessionTime", "==", sessionTime)
+			);
+		}else{
+			q = query(
+				messagesRef,
+				where("uid", "==", user.uid),
+			);
+			
+		}
 		const querySnapshot = await getDocs(q);
 		const batch = writeBatch(db);
 		querySnapshot.forEach((doc) => {
@@ -136,10 +150,13 @@ const SendMessage = ({scroll, trigger, readDB, doe}) => {
 		await batch.commit();
 	};
 	const handleExitRoom = async () => {
-		if(doe === true){
-			await deleteUserMessages(readDB);
+		if(doe === "Force All"){
+			await deleteUserMessages(readDB, false);
+		}else if(doe === "Current Session"){
+			await deleteUserMessages(readDB, true);	
 		}
 		trigger(0);
+		setSessionTime(0);
 	};
 
   return (
@@ -266,7 +283,7 @@ const MessageInfoContainer = ({ message, dbName, pf, doe }) => {
   );
 };
 
-const MessageBody =  ({ setRoom, readDB, pf, doe }) => {
+const MessageBody =  ({ setRoom, readDB, pf, doe, sessionTime, setSessionTime }) => {
   const [messages, setMessages] = useState([]);
   const scroll = useRef();
 
@@ -297,7 +314,7 @@ const MessageBody =  ({ setRoom, readDB, pf, doe }) => {
         ))}
 	  </div>
 	  <span ref={scroll}></span>
-          <SendMessage scroll={scroll} trigger={ setRoom } readDB={ readDB } doe={ doe }/>
+          <SendMessage scroll={scroll} trigger={ setRoom } readDB={ readDB } doe={ doe } sessionTime={sessionTime} setSessionTime={setSessionTime}/>
 	  </main>
   );
 };
@@ -336,7 +353,7 @@ const PCRCard = ({ trigger }) => {
 );
 }
 
-const PRCRCard = ({ setRoom, setDBName, pf, setPF, doe, setDOE }) => {
+const PRCRCard = ({ setRoom, setDBName, pf, setPF, doe, setDOE, setSessionTime }) => {
 	const [roomName, setRN] = useState("");
 	const [roomID, setRID] = useState("");
 	const [dbCon, setDBCon] = useState(false);
@@ -425,6 +442,7 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF, doe, setDOE }) => {
 				if (exists) {
 					setDBName(roomName);
 					setRoom(2);
+					setSessionTime(Date.now());
 				}else{
 					alert("Room Not Found!");
 					return;
@@ -482,7 +500,11 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF, doe, setDOE }) => {
 			</div>
 			<div className="flex">
 			<p className="text-sm font-bold text-white px-2">Delete Messages On Exit:</p>
-			<input type="checkbox" id="DeleteOnExit" checked={doe} onChange={setDeleteOnExit}/>
+			<select value={doe} onChange={e => setDOE(e.target.value)}>
+				<option value="Disabled">Disabled</option>
+				<option value="Current Session">Current Session</option>
+				<option value="Force All">Force All</option>
+			</select>
 			</div>
 			<div className="flex">
 			<p className="text-sm font-bold text-white px-2">Create New Room:</p>
@@ -503,11 +525,11 @@ const PRCRCard = ({ setRoom, setDBName, pf, setPF, doe, setDOE }) => {
 );
 }
 
-const Lobby = ({ setRoom, enterRoom, setDBName, pf, setPF, doe, setDOE}) => {
+const Lobby = ({ setRoom, enterRoom, setDBName, pf, setPF, doe, setDOE, setSessionTime}) => {
 	return (
 		<div className="h-screen flex-col items-center justify-center">
 			<PCRCard trigger={() => enterRoom(1)}/>
-			<PRCRCard setRoom={setRoom} setDBName={setDBName} pf={pf} setPF={setPF} doe={doe} setDOE={setDOE}/>
+			<PRCRCard setRoom={setRoom} setDBName={setDBName} pf={pf} setPF={setPF} doe={doe} setDOE={setDOE} setSessionTime={setSessionTime}/>
 		</div>
 
 	);
@@ -522,10 +544,10 @@ const PublicChatRoom = ({ setRoom }) => {
 	);
 }
 
-const PrivateRoom = ({ setRoom, dbName, pf, doe}) => {
+const PrivateRoom = ({ setRoom, dbName, pf, doe, sessionTime, setSessionTime}) => {
 	return(
 		<div>
-			<MessageBody setRoom={setRoom} readDB={dbName} pf={pf} doe={doe}/>
+			<MessageBody setRoom={setRoom} readDB={dbName} pf={pf} doe={doe} sessionTime={sessionTime} setSessionTime={setSessionTime}/>
 		</div>
 	);
 }
@@ -545,7 +567,8 @@ function App() {
   const [targetRoom, setTargetRoom] = useState(null);
   const [dbName, setDBName] = useState("");
   const [pf, setPF] = useState(false);
-  const [doe, setDOE] = useState(false);
+  const [doe, setDOE] = useState("Disabled");
+  const [sessionTime, setSessionTime] = useState(0);
 
   const enterRoom = (roomId) => {
     setTargetRoom(roomId);
@@ -566,13 +589,13 @@ function App() {
       ) : room === 10 ? (
         <UserEditRoom setRoom={setRoom} />
       ) : room === 0 ? (
-        <Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName} pf={pf} setPF={setPF} doe={doe} setDOE={setDOE}/>
+        <Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName} pf={pf} setPF={setPF} doe={doe} setDOE={setDOE} setSessionTime={setSessionTime}/>
       ) : room === 1 ? (
         <PublicChatRoom setRoom={setRoom}/>
       ) : room === 2 ? (
-	<PrivateRoom setRoom={setRoom} dbName={dbName} pf={pf} doe={doe}/>
+	<PrivateRoom setRoom={setRoom} dbName={dbName} pf={pf} doe={doe} sessionTime={sessionTime} setSessionTime={setSessionTime}/>
       ) : (
-	<Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName} pf={pf} setPF={setPF} doe={doe} setDOE={setDOE}/>
+	<Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName} pf={pf} setPF={setPF} doe={doe} setDOE={setDOE} setSessionTime={setSessionTime}/>
       )}
     </div>
   );
