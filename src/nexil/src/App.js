@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { auth, db } from "./firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { updateProfile } from "firebase/auth";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, getAuth, signInWithPopup, signInAnonymously } from "firebase/auth";
 import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit, doc, getDocs, deleteDoc, getFirestore, where, writeBatch} from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Filter } from 'bad-words';
@@ -54,6 +54,7 @@ function NavHeader({ setRoom }){
 	const [user] = useAuthState(auth);
 	const signOut = () => {
 		auth.signOut();
+		auth.currentUser.delete();
 	};
 
 	return (
@@ -83,13 +84,13 @@ function NavHeader({ setRoom }){
 
 function LoginAlert(){
 	const [user] = useAuthState(auth);
+	const anonymousSignIn = () => {
+		signInAnonymously(auth);
+	};
 	const googleSignIn = () => {
 		const provider = new GoogleAuthProvider();
                 signInWithPopup(auth, provider);
         };
-        const signOut = () => {
-		auth.signOut();
-	};
 	return (
 		<div className="h-screen flex items-center justify-center">
 			<div className="flex flex-col items-center">
@@ -97,7 +98,12 @@ function LoginAlert(){
 		<img src={nexilIcon} className="w-1/2" />
 		</div>
 		<h1 className="font-bold text-white text-center py-2">🗣️ Talk with anyone using Nexil<br /> Get Started!</h1>
+		<div className="p-1">
+                        <button onClick={anonymousSignIn} className="border-0 bg-white text-black font-bold text-md hover:border-2 hover:border-purple-900 px-4 py-2 rounded-full flex items-center justify-center"><img src={nexilIcon} className="w-5 h-5 mr-2"/>Log In Anonymously</button>
+		</div>
+		<div className="p-1">
                         <button onClick={googleSignIn} className="border-0 bg-white text-black font-bold text-md hover:border-2 hover:border-blue-500 px-4 py-2 rounded-full flex items-center justify-center"><img src={googleIcon} className="w-5 h-5 mr-2"/>Log In With Google</button>
+		</div>
 			</div>
 		</div>
 	);
@@ -536,10 +542,10 @@ const Lobby = ({ setRoom, enterRoom, setDBName, pf, setPF, doe, setDOE, setSessi
 }
 
 
-const PublicChatRoom = ({ setRoom }) => {
+const PublicChatRoom = ({ setRoom, sessionTime, setSessionTime }) => {
 	return(
 		<div>
-			<MessageBody setRoom={setRoom} readDB="nexil-chat-db" pf={true} doe={false}/>
+			<MessageBody setRoom={setRoom} readDB="nexil-chat-db" pf={true} doe={false} sessionTime={0} setSessionTime={setSessionTime}/>
 		</div>
 	);
 }
@@ -591,7 +597,7 @@ function App() {
       ) : room === 0 ? (
         <Lobby setRoom={setRoom} enterRoom={enterRoom} setDBName={setDBName} pf={pf} setPF={setPF} doe={doe} setDOE={setDOE} setSessionTime={setSessionTime}/>
       ) : room === 1 ? (
-        <PublicChatRoom setRoom={setRoom}/>
+        <PublicChatRoom setRoom={setRoom} sessionTime={sessionTime} setSessionTime={setSessionTime}/>
       ) : room === 2 ? (
 	<PrivateRoom setRoom={setRoom} dbName={dbName} pf={pf} doe={doe} sessionTime={sessionTime} setSessionTime={setSessionTime}/>
       ) : (
