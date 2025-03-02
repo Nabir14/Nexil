@@ -3,7 +3,7 @@ import React from "react";
 
 const Aside: React.FC = () => {
 	return (
-		<aside className="flex flex-col select-none max-sm:hidden max-w-72 min-h-svh max-h-svh w-full overflow-x-auto scroll-w-none bg-neutral-900">
+		<aside className="flex flex-col select-none max-sm:hidden max-w-72 min-h-svh max-h-svh w-full overflow-x-hidden overflow-y-auto scroll-w-none bg-neutral-900">
 			<section className="sticky top-0 flex items-center justify-between p-2 bg-neutral-900">
 				<div className="flex items-center">
 					<img
