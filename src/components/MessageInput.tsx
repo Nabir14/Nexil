@@ -6,11 +6,11 @@ interface Prop {
   placeholder: string;
   onClick: () => void;
   onChange: React.ChangeEventHandler<HTMLInputElement>;
-  onKeyPress: React.KeyboardEventHandler<HTMLInputElement>;
+  onKeyUp: React.KeyboardEventHandler<HTMLInputElement>;
 }
 
 const MessageInput: React.FC<Prop> = React.memo(
-  ({ value, placeholder, onClick, onChange, onKeyPress }) => {
+  ({ value, placeholder, onClick, onChange, onKeyUp }) => {
     return (
       <section className="sticky bottom-0 flex w-[-webkit-fill-available] h-fit px-2 bg-neutral-900">
         <input
@@ -19,7 +19,7 @@ const MessageInput: React.FC<Prop> = React.memo(
           value={value}
           placeholder={placeholder}
           onChange={onChange}
-          onKeyPress={onKeyPress}
+          onKeyUp={onKeyUp}
         />
         <button
           className="flex items-center justify-center cursor-pointer hover:text-white active:text-white"

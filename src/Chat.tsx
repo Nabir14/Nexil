@@ -51,7 +51,7 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <section className="relative w-full min-h-svh max-h-svh overflow-x-auto scroll-w-none">
+    <section className="relative w-full min-h-svh max-h-svh overflow-x-hidden overflow-y-auto scroll-w-none">
       {loading ? (
         <div className="flex items-center justify-center h-full">
           <p className="font-extrabold text-sm">Loading messages...</p>
@@ -68,7 +68,7 @@ const Chat: React.FC = () => {
             value={newMessage}
             placeholder="Type a message"
             onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+            onKeyUp={(e) => e.key === "Enter" && sendMessage()}
             onClick={sendMessage}
           />
         </>
