@@ -12,10 +12,10 @@ interface MessageItemProps {
 
 const MessageItem: React.FC<MessageItemProps> = React.memo(({ message }) => {
   return (
-    <div className="rounded-lg w-max p-2 bg-neutral-900">
+    <section className="rounded-xl max-w-fit p-2 bg-neutral-900">
       <p>{message.text}</p>
       <small>{new Date(message.timestamp).toLocaleTimeString()}</small>
-    </div>
+    </section>
   );
 });
 
