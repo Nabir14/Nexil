@@ -58,7 +58,7 @@ const Chat: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-1 p-2">
+          <div className="flex flex-col gap-1.5 p-2">
             {messages.map((message) => (
               <MessageItem key={message.id} message={message} />
             ))}
