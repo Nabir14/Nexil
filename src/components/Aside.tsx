@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import React from "react";
+import Logout from "./LogOut";
 
 const Aside: React.FC = () => {
 	return (
@@ -10,18 +11,22 @@ const Aside: React.FC = () => {
 						src="https://nexil.vercel.app/static/media/nexil-icon-transparent.4514cfeec979d24532f5.png"
 						width={48}
 						height={48}
-						alt="profile"
+						alt="Nexil"
 						className="shrink-0 object-cover rounded-full size-12"
+						loading="lazy"
 					/>
 					<h1 className="font-extrabold text-2xl">Nexil</h1>
 				</div>
-				<button className="flex items-center justify-center cursor-pointer rounded-full p-1 transition hover:bg-neutral-800 hover:text-white active:bg-neutral-800 active:text-white">
-					<Plus />
-				</button>
+				<div className="flex items-center">
+					<button className="flex items-center justify-center cursor-pointer rounded-full p-2 transition hover:bg-neutral-800 hover:text-white active:bg-neutral-800 active:text-white">
+						<Plus />
+					</button>
+					<Logout />
+				</div>
 			</section>
 			<section className="flex flex-nowrap gap-1 cursor-pointer w-full p-2 transition hover:bg-neutral-800 active:bg-neutral-800">
 				<img
-					src="https://picsum.photos/200/300 "
+					src="https://picsum.photos/200/300"
 					width={48}
 					height={48}
 					alt="profile"
